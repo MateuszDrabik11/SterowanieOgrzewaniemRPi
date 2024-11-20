@@ -15,4 +15,5 @@ def index():
 def recent():
     return render_template("recent.html",data=db.getRecentTemps())
 
+#app.run(debug=True)
 serve(app, host='0.0.0.0', port=8080)

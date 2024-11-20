@@ -21,6 +21,7 @@ class Measurement:
 class dbManager:
     def __init__(self):
         self.connection = sqlite3.connect("data.db", check_same_thread=False)
+        self.connection.row_factory = sqlite3.Row
         self.cursor = self.connection.cursor()
     def getSensors(self):
         self.cursor.execute("SELECT * FROM sensors")
@@ -28,10 +29,10 @@ class dbManager:
     def createSensor(self,sensor):
         self.cursor.execute("INSERT INTO sensors(ip, room) VALUES(?,?)",(sensor.ip,sensor.room))
         self.connection.commit()
-    def createMeasurement(self,sensor, measurement):
+    def createMeasurement(self,sensor_ip, measurement):
         self.cursor.execute("INSERT INTO measurement(s_id,temp,target_temp,humidity, date) VALUES(?,?,?,?,?)",
         (
-            sensor,
+            sensor_ip,
             measurement.temp,
             measurement.target,
             measurement.hum,
@@ -56,13 +57,13 @@ class dbManager:
         """
         self.cursor.execute(query, (top,))
         rows = self.cursor.fetchall()
+        sensors = {s["ip"]:s["room"] for s in self.getSensors()}
         data_map = {}
         for row in rows:
             m_id, s_id, temp, target_temp, humidity, date = row
-            if s_id not in data_map:
-                data_map[s_id] = []
-            data_map[s_id].append({
-                'm_id': m_id,
+            if sensors[s_id] not in data_map:
+                data_map[sensors[s_id]] = []
+            data_map[sensors[s_id]].append({
                 'temp': temp,
                 'target_temp': target_temp,
                 'humidity': humidity,

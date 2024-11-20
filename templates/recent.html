@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Data</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>Recent data from sensors</h1>
+    {% for ip, entries in data.items() %}
+        <h2>Data for Device {{ ip }}</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Humidity</th>
+                    <th>Target Temperature</th>
+                    <th>Temperature</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                    <tr>
+                        <td>{{ entry.date }}</td>
+                        <td>{{ entry.humidity }}%</td>
+                        <td>{{ entry.target_temp }}°C</td>
+                        <td>{{ entry.temp }}°C</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <br>
+    {% endfor %}
+</body>
+</html>

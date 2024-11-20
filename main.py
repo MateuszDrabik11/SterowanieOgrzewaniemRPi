@@ -3,18 +3,37 @@ from dbManager import dbManager, Sensor,Measurement
 import threading
 import requests
 import time
+
+def updateSensors(connector,dbManager):
+    sensors = connector.scanLan()
+    dbSensors = db.getSensors()
+    dbSet = {dbSensor[1] for dbSensor in dbSensors}
+    for sensor in sensors:
+        if sensor not in dbSet:
+            db.createSensor(Sensor(ip=sensor,room=sensors[sensor]))
+    dbSensors = db.getSensors()
+    sensors = {dbSensor["ip"]:dbSensor["room"] for dbSensor in dbSensors}
+    print(sensors)
+    return sensors
+
 def SensorHandler(sensors,stop_event):
     dbMan = dbManager()
+    sensorsToCheck = [s for s in sensors]
     while not stop_event.is_set():
-        for ip,name in sensors.items():
+        if len(sensors) == 0:
+            connector = Connector()
+            sensors = updateSensors(connector,dbMan)
+            sensorsToCheck = [s for s in sensors]
+        for ip in sensorsToCheck:
             try:
                 r = requests.get("http://" + ip + ":3000/")
                 if r.status_code == 200:
                     result = r.json()
                     print(result)
                     m = Measurement(temp = result["current_temperature"],target = result["target_temperature"],hum = result["humidity"])
-                    dbMan.createMeasurement(sensor,m)
+                    dbMan.createMeasurement(ip,m)
             except requests.exceptions.RequestException as e:
+                sensorsToCheck.remove(ip)
                 continue
         time.sleep(60)
 
@@ -35,22 +54,9 @@ connector.waitForConnection()
 
 #scan for device on port 3000
 
-sensors = connector.scanLan()
-
 db = dbManager()
 
-dbSensors = db.getSensors()
-
-dbSet = {dbSensor[1] for dbSensor in dbSensors}
-
-for sensor in sensors:
-    if sensor not in dbSet:
-        db.createSensor(Sensor(ip=sensor,room=sensors[sensor]))
-
-dbSensors = db.getSensors()
-
-sensors = {dbSensor[1]:dbSensor[2] for dbSensor in dbSensors}
-print(sensors)
+sensors = updateSensors(connector,db)
 
 #t1:    every minute request data from sensors, current_temp,target_temp, store in db
 
