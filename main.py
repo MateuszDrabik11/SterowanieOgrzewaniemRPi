@@ -3,7 +3,6 @@ from dbManager import dbManager, Sensor,Measurement
 import threading
 import requests
 import time
-
 def SensorHandler(sensors,stop_event):
     dbMan = dbManager()
     while not stop_event.is_set():
@@ -12,6 +11,7 @@ def SensorHandler(sensors,stop_event):
                 r = requests.get("http://" + ip + ":3000/")
                 if r.status_code == 200:
                     result = r.json()
+                    print(result)
                     m = Measurement(temp = result["current_temperature"],target = result["target_temperature"],hum = result["humidity"])
                     dbMan.createMeasurement(sensor,m)
             except requests.exceptions.RequestException as e:
@@ -50,12 +50,14 @@ for sensor in sensors:
 dbSensors = db.getSensors()
 
 sensors = {dbSensor[1]:dbSensor[2] for dbSensor in dbSensors}
+print(sensors)
+
+#t1:    every minute request data from sensors, current_temp,target_temp, store in db
 
 stop_event = threading.Event()
 t1 = threading.Thread(target=SensorHandler, args = (sensors,stop_event))
 t1.start()
 
-#t1:    every minute request data from sensors, current_temp,target_temp, store in db
 
 #t2:    every 5 minutes check water temp
 #       if water_temp < max(target_temp) + 10 -> furnace on, triger relay
@@ -64,7 +66,7 @@ t1.start()
 #       for device:
 #           if device.current_temp < device.target_temp -> valve on
 
-#t4:    host panel
+#separe process:    host panel
 #       - map ip of device to the valve
 #       - display data
 #       

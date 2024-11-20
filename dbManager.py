@@ -20,7 +20,7 @@ class Measurement:
 
 class dbManager:
     def __init__(self):
-        self.connection = sqlite3.connect("data.db")
+        self.connection = sqlite3.connect("data.db", check_same_thread=False)
         self.cursor = self.connection.cursor()
     def getSensors(self):
         self.cursor.execute("SELECT * FROM sensors")
@@ -42,14 +42,31 @@ class dbManager:
         self.cursor.execute("SELECT * FROM measurement")
         return self.cursor.fetchall()
 
-    def getRecentTemps(self):
-        self.cursor.execute("""SELECT m1.m_id, m1.s_id, m1.temp,m1.target_temp,m1.humidity, m1.date
-                FROM measurement m1
-                WHERE (
-                    SELECT COUNT(*)
-                    FROM measurement m2
-                    WHERE m2.s_id = m1.s_id
-                    AND m2.date > m1.date
-                ) < 3
-                ORDER BY m1.s_id, m1.date DESC;""")
-        return self.cursor.fetchall()
+    def getRecentTemps(self, top=3):
+        query = """
+            SELECT m1.m_id, m1.s_id, m1.temp, m1.target_temp, m1.humidity, m1.date
+            FROM measurement m1
+            WHERE (
+                SELECT COUNT(*)
+                FROM measurement m2
+                WHERE m2.s_id = m1.s_id
+                AND m2.date > m1.date
+            ) < ?
+            ORDER BY m1.s_id, m1.date DESC;
+        """
+        self.cursor.execute(query, (top,))
+        rows = self.cursor.fetchall()
+        data_map = {}
+        for row in rows:
+            m_id, s_id, temp, target_temp, humidity, date = row
+            if s_id not in data_map:
+                data_map[s_id] = []
+            data_map[s_id].append({
+                'm_id': m_id,
+                'temp': temp,
+                'target_temp': target_temp,
+                'humidity': humidity,
+                'date': date
+            })
+
+        return data_map
