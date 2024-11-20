@@ -6,11 +6,15 @@ from dbManager import dbManager
 app = Flask(__name__)
 db = dbManager()
 
-@app.route('/')
+#main page with links to other stuff
+#settings page to change timings
+#connect page to connect sensor with valve
+
+@app.route('/display')
 def index():
     data = db.getMeasurement()
     sensor = {c[1]:c[2] for c in db.getSensors()}
-    return render_template('index.html', data=data, sensor=sensor)
+    return render_template('display.html', data=data, sensor=sensor)
 @app.route("/recent")
 def recent():
     return render_template("recent.html",data=db.getRecentTemps())
