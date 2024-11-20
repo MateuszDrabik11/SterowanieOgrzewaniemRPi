@@ -1,37 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Led</title>
-    <script>
-        function fetchData() {
-            fetch('/get-value')  // Replace with your actual API endpoint
-                .then(response => response.json())  // Parse the JSON response
-                .then(data => {
-                    // Handle the data, update the UI
-                    console.log(data);  // Log the data (you can update the DOM here)
-
-                    // For example, if you're updating an element with id "data-container"
-                    document.getElementById('data-container').innerHTML = data.value;
-                })
-                .catch(error => {
-                    console.error('Error fetching data:', error);
-                });
+    <title>Temperature and Humidity Measurements</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
         }
-
-        // Set interval to fetch data every 1000 milliseconds (1 second)
-        setInterval(fetchData, 1000);
-
-        // Initially fetch the data when the page loads
-        fetchData();
-    </script>
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
 </head>
-
 <body>
-    <h1>Led value</h1>
-    <div id="data-container">Loading data...</div>
+    <h1>Temperature and Humidity Measurements</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Sensor name</th>
+                <th>Date</th>
+                <th>Temperature (°C)</th>
+                <th>Humidity (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr>
+                <td>{{ sensor[row['s_id']] }}</td>
+                <td>{{ row['date'] }}</td>
+                <td>{{ row['temp'] }}</td>
+                <td>{{ row['humidity'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </body>
-
 </html>

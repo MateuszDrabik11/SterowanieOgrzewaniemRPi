@@ -1,6 +1,5 @@
 from connect import Connector
 from dbManager import dbManager, Sensor,Measurement
-import connect
 import threading
 import requests
 import time
@@ -17,7 +16,7 @@ def SensorHandler(sensors,stop_event):
                     dbMan.createMeasurement(sensor,m)
             except requests.exceptions.RequestException as e:
                 continue
-        time.sleep(1)
+        time.sleep(60)
 
 
 #turn on ap with panel to login to network
@@ -55,9 +54,6 @@ sensors = {dbSensor[1]:dbSensor[2] for dbSensor in dbSensors}
 stop_event = threading.Event()
 t1 = threading.Thread(target=SensorHandler, args = (sensors,stop_event))
 t1.start()
-time.sleep(2)
-stop_event.set()
-t1.join()
 
 #t1:    every minute request data from sensors, current_temp,target_temp, store in db
 
