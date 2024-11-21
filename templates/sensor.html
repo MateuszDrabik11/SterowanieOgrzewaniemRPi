@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 50%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sensor Details</h1>
+
+    {% if sensor %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>IP Address</th>
+                    <th>Room</th>
+                    <th>status</th>
+                    <th>Connected valve</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for id, ip, room, on in sensor %}
+                <tr>
+                    <td>{{ id }}</td>
+                    <td>{{ ip }}</td>
+                    <td>{{ room }}</td>
+                    <td>{{ "online" if on else "offline" }}</td>
+                    <td>{{ connections[id] if connections[id] else "Not connected"}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No sensor data available.</p>
+    {% endif %}
+    <div>
+        <form method="post" name="roomForm">
+            <div>
+                <strong>Change sensor name</strong>
+                <div>
+                    <input type="text" name="sensor_name" placeholder="sensor name">
+                </div>
+            </div>
+            <br>
+            <div>
+                <strong>Connect sensor to valve</strong>
+                <div>
+                    <select name="valveSelect">
+                        <option value="---">---</option>
+                        {% for valve in valves %}
+                        <option value="{{valve['v_id']}}">id:{{valve["v_id"]}}/pin:{{valve["pin"]}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <br>
+            <div>
+                <button type="submit">Submit</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
