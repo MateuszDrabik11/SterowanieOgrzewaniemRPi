@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,51 +10,59 @@
             font-family: Arial, sans-serif;
             margin: 20px;
         }
+
         table {
             width: 50%;
             border-collapse: collapse;
             margin: 20px 0;
         }
-        table, th, td {
+
+        table,
+        th,
+        td {
             border: 1px solid black;
         }
-        th, td {
+
+        th,
+        td {
             padding: 8px 12px;
             text-align: left;
         }
+
         th {
             background-color: #f4f4f4;
         }
     </style>
 </head>
+
 <body>
     <h1>Sensor Details</h1>
 
     {% if sensor %}
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>IP Address</th>
-                    <th>Room</th>
-                    <th>status</th>
-                    <th>Connected valve</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for id, ip, room, on in sensor %}
-                <tr>
-                    <td>{{ id }}</td>
-                    <td>{{ ip }}</td>
-                    <td>{{ room }}</td>
-                    <td>{{ "online" if on else "offline" }}</td>
-                    <td>{{ connections[id] if connections[id] else "Not connected"}}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>IP Address</th>
+                <th>Room</th>
+                <th>status</th>
+                <th>Connected valve</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for id, ip, room, on in sensor %}
+            <tr>
+                <td>{{ id }}</td>
+                <td>{{ ip }}</td>
+                <td>{{ room }}</td>
+                <td>{{ "online" if on else "offline" }}</td>
+                <td>{{ connections[id] if connections[id] else "Not connected"}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     {% else %}
-        <p>No sensor data available.</p>
+    <p>No sensor data available.</p>
     {% endif %}
     <div>
         <form method="post" name="roomForm">
@@ -80,6 +89,25 @@
                 <button type="submit">Submit</button>
             </div>
         </form>
+        <br><br>
+        <div>
+            <button onclick="event.preventDefault(); 
+                fetch('/delete/{{ sensor[0][0] | tojson }}')
+                  .then(response => { 
+                    if (!response.ok) { 
+                      throw new Error('Network response was not ok ' + response.statusText); 
+                    }
+                    alert('Sensor deleted successfully');
+                    window.location.href = '/sensors';
+                  })
+                  .catch(error => {
+                    alert('Error deleting sensor: ' + error.message);
+                  })">
+                Delete this sensor
+            </button>
+
+        </div>
     </div>
 </body>
+
 </html>

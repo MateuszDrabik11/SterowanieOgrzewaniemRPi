@@ -123,3 +123,6 @@ class dbManager:
     def connectSensorToValve(self,sensor,valve):
         self.cursor.execute("UPDATE valves SET s_id = ? WHERE v_id = ?",(sensor,valve))
         self.connection.commit()
+    def deleteSensor(self,sensor):
+        self.cursor.execute("DELETE FROM sensors WHERE id = ?",(sensor,))
+        self.connection.commit()

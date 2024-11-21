@@ -27,7 +27,7 @@ def sensors():
 def sensor(id):
     valves = db.getValves()
     connections = {v["s_id"]:v["v_id"] for v in valves}
-    sensor = ((row["id"],row["ip"],row["room"],row["isOn"]) for row in db.getSensors() if row["id"]==id)
+    sensor = [row for row in db.getSensors() if row["id"]==id]
     if request.method == "POST":
         new_name = request.form.get("sensor_name","").strip()
         valve = request.form.get("valveSelect", None)
@@ -41,6 +41,9 @@ def sensor(id):
         return redirect("/sensors")
         
     return render_template("sensor.html",sensor=sensor,valves=valves,connections=connections)
-
+@app.route("/delete/<int:id>")
+def delete(id):
+    db.deleteSensor(id)
+    return redirect("/sensors")
 app.run(debug=True)
 #serve(app, host='0.0.0.0', port=8080)
