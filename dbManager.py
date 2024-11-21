@@ -100,6 +100,12 @@ class dbManager:
     def UpdateWaterTemp(self,temp):
         self.cursor.execute("UPDATE config SET waterTemp = ? ",(temp,))
         self.connection.commit()
+    def GetWaterTemp(self):
+        self.cursor.execute("SELECT waterTemp FROM config")
+        return self.cursor.fetchone()
+    def changeSensorName(self,sensor,name):
+        self.cursor.execute("UPDATE sensors SET room = ? WHERE id = ?",(name,sensor))
+        self.connection.commit()
     def GetTimings(self):
         self.cursor.execute("SELECT timing1,timing2,timing3 from config")
         return self.cursor.fetchall()
@@ -114,3 +120,6 @@ class dbManager:
         if new[2] != -1:
             self.cursor.execute("UPDATE config SET timing3 = ? ",(new[2],))
             self.connection.commit()
+    def connectSensorToValve(self,sensor,valve):
+        self.cursor.execute("UPDATE valves SET s_id = ? WHERE v_id = ?",(sensor,valve))
+        self.connection.commit()
