@@ -4,7 +4,7 @@ import threading
 import requests
 import time
 import statistics
-from gpiozero import LED
+from gpiozero import LED,MCP3008
 
 def updateSensors(connector,dbManager):
     sensors = connector.scanLan()
@@ -19,10 +19,11 @@ def updateSensors(connector,dbManager):
     print(sensors)
     return sensors
 
-def SensorHandler(sensors,stop_event):
+def SensorHandler(sensors):
     dbMan = dbManager()
     sensorsToCheck = [s for s in sensors]
-    while not stop_event.is_set():
+    timing = dbMan.GetTimings()[0][0]
+    while True:
         if len(sensorsToCheck) == 0:
             connector = Connector()
             sensors = updateSensors(connector,dbMan)
@@ -42,14 +43,15 @@ def SensorHandler(sensors,stop_event):
                 db.SensorOff(ip)
                 sensorsToCheck.remove(ip)
                 continue
-        time.sleep(5)
+        time.sleep(timing)
 
-def ValveHandler(stop_event):
+def ValveHandler():
     db = dbManager()
     valves = db.getValves()
     sensors = {s['id']:s['room'] for s in db.getSensors()}
     pins = {v['pin']:LED(v['pin']) for v in valves}
-    while not stop_event.is_set():
+    timing = db.GetTimings()[0][2]
+    while True:
         temps = db.getRecentTemps()
         for valve in valves:
             sensorTemps = [t['temp'] for t in temps[sensors[valve['s_id']]]]
@@ -60,28 +62,34 @@ def ValveHandler(stop_event):
                 pins[valve['pin']].on()
             else:
                 pins[valve['pin']].off()
-        time.sleep(5)
+        time.sleep(timing)
 
-
+def HeaterHandler():
+    waterSensor = MCP3008(0)
+    furnace = LED(14)
+    db = dbManager()
+    timing = db.GetTimings()[0][1]
+    #0.0, 0V -> -40 C
+    #1.0, 3.3V -> 120 C
+    #y[C], x[1]
+    #y=ax-40
+    #120=a-40
+    #a=160
+    #50=160x-40
+    #x=90/160=9/16
+    #x=0.5625
+    temperature = lambda x: 160*x - 40
+    while True:
+        if waterSensor.value < 0.5625:
+            furnace.on()
+        else:
+            furnace.off()
+        db.UpdateWaterTemp(temperature(waterSensor.value))
+        time.sleep(timing)
 
 connector = Connector()
-#turn on ap with panel to login to network
-
-#connector.initDiode()
-
-#wait for connection, wifi or ethernet
 
 connector.waitForConnection()
-
-#if connected light diode
-#if ap on blink diode
-
-
-
-
-#when connected
-
-#scan for device on port 3000
 
 db = dbManager()
 
@@ -89,20 +97,22 @@ sensors = updateSensors(connector,db)
 
 #t1:    every minute request data from sensors, current_temp,target_temp, store in db
 
-stop_event1 = threading.Event()
-stop_event3 = threading.Event()
-t1 = threading.Thread(target=SensorHandler, args = (sensors,stop_event1))
+t1 = threading.Thread(target=SensorHandler, args = (sensors,))
 t1.start()
-
-t3 = threading.Thread(target=ValveHandler, args=(stop_event3,))
-t3.start()
 
 #t2:    every 15 minutes check water temp
 #       if water_temp < 50 -> furnace on, triger relay
 
+t2 = threading.Thread(target=HeaterHandler)
+t2.start()
+
 #t3:    every 15 minutes check 
 #       for device:
 #           if device.current_temp < device.target_temp -> valve on
+
+t3 = threading.Thread(target=ValveHandler)
+t3.start()
+
 
 #separe process:    host panel
 #       - map ip of device to the valve

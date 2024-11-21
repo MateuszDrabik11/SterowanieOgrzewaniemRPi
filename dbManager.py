@@ -97,3 +97,20 @@ class dbManager:
         self.cursor.execute("INSERT INTO valves(s_id, pin) VALUES(?,?)",(valve.sensor,valve.pin))
         self.connection.commit()
         return
+    def UpdateWaterTemp(self,temp):
+        self.cursor.execute("UPDATE config SET waterTemp = ? ",(temp,))
+        self.connection.commit()
+    def GetTimings(self):
+        self.cursor.execute("SELECT timing1,timing2,timing3 from config")
+        return self.cursor.fetchall()
+    def UpdateTimings(self, new):
+        #new - tuple, -1 means no change
+        if new[0] != -1:
+            self.cursor.execute("UPDATE config SET timing1 = ? ",(new[0],))
+            self.connection.commit()
+        if new[1] != -1:
+            self.cursor.execute("UPDATE config SET timing2 = ? ",(new[1],))
+            self.connection.commit()
+        if new[2] != -1:
+            self.cursor.execute("UPDATE config SET timing3 = ? ",(new[2],))
+            self.connection.commit()
