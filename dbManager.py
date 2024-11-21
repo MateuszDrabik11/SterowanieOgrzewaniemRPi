@@ -11,13 +11,19 @@ class Sensor:
         self.isOn = isOn
 
 class Measurement:
-    def __init__(self, m_id = None, sensor= "", temp = 0, hum = 0, target = 0, date = ""):
+    def __init__(self, m_id = None, sensor= None, temp = 0, hum = 0, target = 0, date = ""):
         self.m_id = m_id
         self.sensor = sensor
         self.temp = temp
         self.hum = hum
         self.target = target
         self.date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+class Valve:
+    def __init__(self,v_id = None, sensor=None, pin=None):
+        self.v_id = v_id
+        self.sensor = sensor
+        self.pin = pin
 
 class dbManager:
     def __init__(self):
@@ -28,7 +34,7 @@ class dbManager:
         self.cursor.execute("SELECT * FROM sensors")
         return self.cursor.fetchall()
     def createSensor(self,sensor):
-        self.cursor.execute("INSERT INTO sensors(ip, room) VALUES(?,?,?)",(sensor.ip,sensor.room,sensor.isOn))
+        self.cursor.execute("INSERT INTO sensors(ip, room,isOn) VALUES(?,?,?)",(sensor.ip,sensor.room,sensor.isOn))
         self.connection.commit()
         return
     def createMeasurement(self,sensor_ip, measurement):
@@ -82,5 +88,12 @@ class dbManager:
         return
     def SensorOff(self,sensor):
         self.cursor.execute("UPDATE sensors SET isOn = false WHERE ip = ?",(sensor,))
+        self.connection.commit()
+        return
+    def getValves(self):
+        self.cursor.execute("SELECT * FROM valves")
+        return self.cursor.fetchall()
+    def createValve(self,valve):
+        self.cursor.execute("INSERT INTO valves(s_id, pin) VALUES(?,?)",(valve.sensor,valve.pin))
         self.connection.commit()
         return

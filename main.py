@@ -3,6 +3,8 @@ from dbManager import dbManager, Sensor,Measurement
 import threading
 import requests
 import time
+import statistics
+from gpiozero import LED
 
 def updateSensors(connector,dbManager):
     sensors = connector.scanLan()
@@ -42,10 +44,31 @@ def SensorHandler(sensors,stop_event):
                 continue
         time.sleep(5)
 
+def ValveHandler(stop_event):
+    db = dbManager()
+    valves = db.getValves()
+    sensors = {s['id']:s['room'] for s in db.getSensors()}
+    pins = {v['pin']:LED(v['pin']) for v in valves}
+    while not stop_event.is_set():
+        temps = db.getRecentTemps()
+        for valve in valves:
+            sensorTemps = [t['temp'] for t in temps[sensors[valve['s_id']]]]
+            avgTemp = statistics.mean(sensorTemps)
+            lastTargetTemp = temps[sensors[valve['s_id']]][0]['target_temp']
+            print(f"{valve['v_id']}:avg={avgTemp},target={lastTargetTemp}")
+            if avgTemp < lastTargetTemp:
+                pins[valve['pin']].on()
+            else:
+                pins[valve['pin']].off()
+        time.sleep(5)
+
+
 
 connector = Connector()
 #turn on ap with panel to login to network
-connector.initDiode()
+
+#connector.initDiode()
+
 #wait for connection, wifi or ethernet
 
 connector.waitForConnection()
@@ -66,10 +89,13 @@ sensors = updateSensors(connector,db)
 
 #t1:    every minute request data from sensors, current_temp,target_temp, store in db
 
-stop_event = threading.Event()
-t1 = threading.Thread(target=SensorHandler, args = (sensors,stop_event))
+stop_event1 = threading.Event()
+stop_event3 = threading.Event()
+t1 = threading.Thread(target=SensorHandler, args = (sensors,stop_event1))
 t1.start()
 
+t3 = threading.Thread(target=ValveHandler, args=(stop_event3,))
+t3.start()
 
 #t2:    every 15 minutes check water temp
 #       if water_temp < 50 -> furnace on, triger relay

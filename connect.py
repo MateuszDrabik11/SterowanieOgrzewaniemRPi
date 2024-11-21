@@ -15,11 +15,11 @@ class Connector:
         return
 
     def waitForConnection(self):
-        self.led.value = 0.5
+        #self.led.value = 0.5
         self.startAp()
         while not self.isConnected():
             time.sleep(5)
-        self.led.value = 1
+        #self.led.value = 1
         return
 
     def isConnected(self):
