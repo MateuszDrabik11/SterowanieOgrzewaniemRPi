@@ -4,10 +4,11 @@ from datetime import datetime
 #measure(m_id $key,id $f_key, temp, hum, target,date)
 
 class Sensor:
-    def __init__(self, id=None, ip="", room=""):
+    def __init__(self, id=None, ip="", room="", isOn=True):
         self.id = id
         self.ip = ip
         self.room = room
+        self.isOn = isOn
 
 class Measurement:
     def __init__(self, m_id = None, sensor= "", temp = 0, hum = 0, target = 0, date = ""):
@@ -27,8 +28,9 @@ class dbManager:
         self.cursor.execute("SELECT * FROM sensors")
         return self.cursor.fetchall()
     def createSensor(self,sensor):
-        self.cursor.execute("INSERT INTO sensors(ip, room) VALUES(?,?)",(sensor.ip,sensor.room))
+        self.cursor.execute("INSERT INTO sensors(ip, room) VALUES(?,?,?)",(sensor.ip,sensor.room,sensor.isOn))
         self.connection.commit()
+        return
     def createMeasurement(self,sensor_ip, measurement):
         self.cursor.execute("INSERT INTO measurement(s_id,temp,target_temp,humidity, date) VALUES(?,?,?,?,?)",
         (
@@ -39,10 +41,12 @@ class dbManager:
             measurement.date
         ))
         self.connection.commit()
+        self.SensorOn(sensor_ip)
+        return
     def getMeasurement(self):
         self.cursor.execute("SELECT * FROM measurement")
         return self.cursor.fetchall()
-
+    #get last ... measured temperatures from sensors that are online
     def getRecentTemps(self, top=3):
         query = """
             SELECT m1.m_id, m1.s_id, m1.temp, m1.target_temp, m1.humidity, m1.date
@@ -57,17 +61,26 @@ class dbManager:
         """
         self.cursor.execute(query, (top,))
         rows = self.cursor.fetchall()
-        sensors = {s["ip"]:s["room"] for s in self.getSensors()}
+        sensors = {s["ip"]: s["room"] for s in self.getSensors() if s["isOn"]}
         data_map = {}
         for row in rows:
             m_id, s_id, temp, target_temp, humidity, date = row
-            if sensors[s_id] not in data_map:
-                data_map[sensors[s_id]] = []
-            data_map[sensors[s_id]].append({
-                'temp': temp,
-                'target_temp': target_temp,
-                'humidity': humidity,
-                'date': date
-            })
+            if s_id in sensors:
+                if sensors[s_id] not in data_map:
+                    data_map[sensors[s_id]] = []
+                data_map[sensors[s_id]].append({
+                    'temp': temp,
+                    'target_temp': target_temp,
+                    'humidity': humidity,
+                    'date': date
+                })
 
         return data_map
+    def SensorOn(self,sensor):
+        self.cursor.execute("UPDATE sensors SET isOn = true WHERE ip = ?",(sensor,))
+        self.connection.commit()
+        return
+    def SensorOff(self,sensor):
+        self.cursor.execute("UPDATE sensors SET isOn = false WHERE ip = ?",(sensor,))
+        self.connection.commit()
+        return

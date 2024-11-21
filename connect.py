@@ -6,9 +6,10 @@ import nmap
 
 
 class Connector:
-    def __init__(self):
+    def initDiode(self):
         self.led = PWMLED(pin=12,frequency=1)
-
+    def close(self):
+        self.led.close()
     def startAp(self):
         #todo
         return
