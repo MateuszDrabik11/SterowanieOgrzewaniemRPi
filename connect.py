@@ -1,4 +1,4 @@
-from gpiozero import PWMLED
+from gpiozero import LED
 import socket
 import netifaces
 import time
@@ -6,20 +6,15 @@ import nmap
 
 
 class Connector:
-    def initDiode(self):
-        self.led = PWMLED(pin=12,frequency=1)
-    def close(self):
-        self.led.close()
-    def startAp(self):
-        #todo
-        return
+    def __init__(self):
+        self.led = LED(14)
 
     def waitForConnection(self):
-        #self.led.value = 0.5
-        self.startAp()
+        self.led.off()
         while not self.isConnected():
             time.sleep(5)
-        #self.led.value = 1
+        self.led.on()
+        self.led.close()
         return
 
     def isConnected(self):

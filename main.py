@@ -66,7 +66,8 @@ def ValveHandler():
 
 def HeaterHandler():
     waterSensor = MCP3008(0)
-    furnace = LED(14)
+    furnace = LED(16)
+    furnaceLed = LED(12)
     db = dbManager()
     timing = db.GetTimings()[0][1]
     #0.0, 0V -> -40 C
@@ -82,8 +83,12 @@ def HeaterHandler():
     while True:
         if waterSensor.value < 0.5625:
             furnace.on()
+            furnaceLed.on()
         else:
             furnace.off()
+            furnaceLed.off()
+        print(waterSensor.value)
+        print(temperature(waterSensor.value))
         db.UpdateWaterTemp(temperature(waterSensor.value))
         time.sleep(timing)
 
@@ -95,26 +100,20 @@ db = dbManager()
 
 sensors = updateSensors(connector,db)
 
-#t1:    every minute request data from sensors, current_temp,target_temp, store in db
+#t1:    request data from sensors, current_temp,target_temp, store in db
 
 t1 = threading.Thread(target=SensorHandler, args = (sensors,))
 t1.start()
 
-#t2:    every 15 minutes check water temp
+#t2:    check water temp
 #       if water_temp < 50 -> furnace on, triger relay
 
 t2 = threading.Thread(target=HeaterHandler)
 t2.start()
 
-#t3:    every 15 minutes check 
+#t3:    check 
 #       for device:
 #           if device.current_temp < device.target_temp -> valve on
 
 t3 = threading.Thread(target=ValveHandler)
 t3.start()
-
-
-#separe process:    host panel
-#       - map ip of device to the valve
-#       - display data
-#       
