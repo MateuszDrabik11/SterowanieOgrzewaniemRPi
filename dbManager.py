@@ -126,3 +126,7 @@ class dbManager:
     def deleteSensor(self,sensor):
         self.cursor.execute("DELETE FROM sensors WHERE id = ?",(sensor,))
         self.connection.commit()
+    def getLastTemp(self):
+        self.cursor.execute("select temp,target_temp from measurement order by date desc limit 1;")
+        temp = self.cursor.fetchone()
+        return (temp['temp'],temp['target_temp'])

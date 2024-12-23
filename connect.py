@@ -1,41 +1,47 @@
+import re
 from gpiozero import LED
 import socket
-import netifaces
+import json
 import time
-import nmap
-
+import ipaddress
 
 class Connector:
-    def __init__(self):
-        self.led = LED(14)
+    def get_ip(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0)
+        try:
+            s.connect(('10.254.254.254', 1))
+            IP = s.getsockname()[0]
+        except Exception:
+            IP = '127.0.0.1'
+        finally:
+            s.close()
+        return IP
+    
+    def GetDataFromSensors(self):
+        sensorData = {}
+        ip = str(ipaddress.IPv4Network(f"{self.get_ip()}/24",strict=False).broadcast_address)
+        addr = ("0.0.0.0",5000)
+        target = (ip,3000)
+        message = "aaaa".encode()
+        s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        s.bind(addr)
+        s.settimeout(0.9)
+        for _ in range(8):
+            try:
+                s.sendto(message, target)
+                data, add = s.recvfrom(1024)
+                sensorData[add] = json.loads(data.decode().rstrip('\x00'))
+                break
+            except socket.timeout:
+                print("no response")
+        return sensorData
 
     def waitForConnection(self):
-        self.led.off()
         while not self.isConnected():
             time.sleep(5)
-        self.led.on()
-        self.led.close()
         return
 
     def isConnected(self):
-        gateWayAddress = netifaces.gateways().get("default",{}).get(netifaces.AF_INET, [None])[0]
-        if not gateWayAddress:
-            return False
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(2)
-                s.connect((gateWayAddress, 80))
-                s.close()
-                return True
-        except (socket.timeout, socket.error):
-            s.close()
-            return False
-    
-    def scanLan(self):
-        sensors = {}
-        nm = nmap.PortScanner()
-        nm.scan("192.168.0.0/24","3000","-sT")
-        for host in nm.all_hosts():
-            if nm[host]["tcp"][3000]["state"] == "open":
-                sensors[host] = host
-        return sensors
+        return self.get_ip() != "127.0.0.1"
