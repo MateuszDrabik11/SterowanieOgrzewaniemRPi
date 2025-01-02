@@ -36,6 +36,8 @@ class Connector:
                 break
             except socket.timeout:
                 print("no response")
+            except json.JSONDecodeError as e:
+                print(f"JSON decode error: {e} | Data received: {data.decode()}")
         return sensorData
 
     def waitForConnection(self):
